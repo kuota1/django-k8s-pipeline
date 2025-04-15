@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   allhands22:
-    image: "ghcr.io/kuota1/agenda-django:${{ github.sha }}"
+    image: "${TESTING_IMAGE}"
     ports:
       - "8000:8000"
     depends_on:
@@ -32,7 +32,7 @@ services:
       start_period: 15s
 
   sut:
-    image: "ghcr.io/kuota1/agenda-django:${{ github.sha }}"
+    image: "${TESTING_IMAGE}"
     tty: true
     stdin_open: true
     depends_on:
