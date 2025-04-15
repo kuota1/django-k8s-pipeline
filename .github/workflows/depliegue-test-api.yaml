@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-# FIRST JOB #######################################################################   
+# FIRST JOB  #######################################################################   
   build-test-image:
     name: Build Image for Testing
     runs-on: ubuntu-latest
