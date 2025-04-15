@@ -1,0 +1,229 @@
+name: despliegue-test-api
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+# FIRST JOB #######################################################################   
+  build-test-image:
+    name: Build Image for Testing
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write # needed to push docker image to ghcr.io
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/kuota1/apytest:${{ github.run_id }}
+          target: test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+# NEXT JOB #######################################################################   
+  test-unit:
+    name: Unit tests in Docker
+    needs: [build-test-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: read
+      
+    steps:
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+      
+      - name: Unit Testing in Docker
+        run: docker run --rm ghcr.io/kuota1/apytest:${{ github.run_id }} echo "run test commands here"
+
+# NEXT JOB #######################################################################   
+  test-integration:
+    name: Integration tests in Compose
+    needs: [build-test-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: read
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Test healthcheck in Docker Compose
+        run: |
+          export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
+          echo Testing image: "$TESTING_IMAGE"
+          docker compose -f docker-compose.test.yml up --exit-code-from sut
+
+# NEXT JOB #######################################################################   
+  test-k3d:
+    name: Test Deployment in Kubernetes
+    needs: [build-test-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: read
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: "test-cluster-1"
+          args: >-
+            --agents 1
+            --no-lb
+            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
+      - name: Smoke test deployment in k3d Kubernetes
+        run: |
+          kubectl create secret docker-registry regcred \
+            --docker-server=https://ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GHCR_PAT }}
+          export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
+          envsubst < manifests/deployment.yaml | kubectl apply -f -
+          kubectl rollout status deployment apytest
+          kubectl exec deploy/apytest -- curl --fail localhost
+
+# NEXT JOB #######################################################################   
+  scan-image:
+    name: Scan Image with Trivy
+    needs: [build-test-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Pull image to scan
+        run: docker pull ghcr.io/kuota1/apytest:${{ github.run_id }}
+
+      - name: Run Trivy for all CVEs (non-blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/kuota1/apytest:${{ github.run_id }}
+          format: table
+          exit-code: 0
+
+# NEXT JOB #######################################################################   
+  build-final-image:
+    name: Build Final Image
+    needs: [test-unit, test-integration, test-k3d, scan-image]
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      pull-requests: write
+
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Docker Metadata for Final Image Build
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: rober0010/apytest,ghcr.io/kuota1/apytest
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=99
+
+      - name: Docker Build and Push to GHCR and Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64

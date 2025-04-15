@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apytest
+  labels:
+    app: apytest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apytest
+  template:
+    metadata:
+      labels:
+        app: apytest
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: apytest
+          image: "ghcr.io/kuota1/agenda-django:${GITHUB_SHA}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: django-secrets
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: django-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: django-secrets
+                  key: DB_PASSWORD
+            - name: DB_HOST
+              value: postgres
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: django-secrets
+                  key: SECRET_KEY

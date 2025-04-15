@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  allhands22:
+    image: "ghcr.io/kuota1/agenda-django:${{ github.sha }}"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./healthchecks:/healthchecks
+    healthcheck:
+      test: /healthchecks/postgres-healthcheck
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  sut:
+    image: "ghcr.io/kuota1/agenda-django:${{ github.sha }}"
+    tty: true
+    stdin_open: true
+    depends_on:
+      allhands22:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "for i in {1..10}; do curl -s http://allhands22:8000 && exit 0 || sleep 3; done; exit 1"

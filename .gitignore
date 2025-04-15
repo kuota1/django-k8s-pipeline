@@ -1,0 +1,47 @@
+# created by virtualenv automatically
+# Entornos virtuales
+.venv/
+venv/
+
+# Archivos de configuración temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de logs
+*.log
+
+# Configuración de IDEs
+.idea/
+.vscode/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de imagen y bases de fotos privadas
+*.jpg
+*.jpeg
+*.png
+*.zip
+
+# Archivos binarios y ejecutables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archivos de base de datos o pruebas
+*.sqlite3
+
+# Archivos de pruebas
+prueba_reconocimiento_facial.py
+
+# Secrets sensibles (creados localmente o por el usuario)
+django-secrets.yaml
+
+# Docker
+**/healthchecks/
+*.bak
+
+
