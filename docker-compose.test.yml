@@ -25,7 +25,7 @@ services:
     volumes:
       - ./healthchecks:/healthchecks
     healthcheck:
-      test: /healthchecks/postgres-healthcheck
+      test: ["CMD", "/healthchecks/postgres-healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
