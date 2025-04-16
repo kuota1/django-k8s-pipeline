@@ -129,6 +129,7 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
 
+      
       - name: Smoke test deployment in k3d Kubernetes
         run: |
           kubectl create secret docker-registry regcred \
@@ -138,7 +139,11 @@ jobs:
           export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
           envsubst < manifests/deployment.yaml | kubectl apply -f -
           kubectl rollout status deployment apytest
-          kubectl exec deploy/apytest -- curl --fail localhost
+          
+          POD_NAME=$(kubectl get pod -l app=apytest -o jsonpath="{.items[0].metadata.name}")
+          echo "Running smoke test in pod: $POD_NAME"
+          kubectl exec "$POD_NAME" -- curl --fail localhost
+
 
 # NEXT JOB #######################################################################   
   scan-image:
