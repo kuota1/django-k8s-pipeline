@@ -129,7 +129,7 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
 
-      - name: Smoke test deployment in k3d Kubernetes
+      - name: Deploy image to k3d
         run: |
           kubectl create secret docker-registry regcred \
             --docker-server=https://ghcr.io \
@@ -137,26 +137,28 @@ jobs:
             --docker-password=${{ secrets.GHCR_PAT }}
 
           export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
+          echo "Desplegando imagen: $TESTING_IMAGE"
           envsubst < manifests/deployment.yaml | kubectl apply -f -
-
+          
           echo "Esperando que el deployment esté listo..."
           kubectl rollout status deployment apytest
 
           echo "Esperando unos segundos extra para asegurar que el contenedor esté listo..."
-          sleep 5
+          sleep 10
 
-          POD_NAME=$(kubectl get pod -l app=apytest -o jsonpath="{.items[0].metadata.name}")
-          echo "Pod listo: $POD_NAME"
-
+      - name: Smoke test in deployed pod
+        run: |
+          POD=$(kubectl get pods -l app=apytest -o jsonpath="{.items[0].metadata.name}")
+          CONTAINER=$(kubectl get pod $POD -o jsonpath="{.spec.containers[0].name}")
+          echo "Pod listo: $POD"
           echo "Contenedores disponibles:"
-          kubectl get pod "$POD_NAME" -o jsonpath='{.spec.containers[*].name}'; echo
-
+          kubectl get pod $POD -o jsonpath="{.spec.containers[*].name}" && echo
+          
           echo "Logs del pod (últimos 20):"
-          kubectl logs "$POD_NAME" --tail=20
-
+          kubectl logs $POD --tail=20
+          
           echo "Ejecutando smoke test dentro del pod..."
-          kubectl exec "$POD_NAME" -- curl --fail localhost:8000
-
+          kubectl exec "$POD" -c "$CONTAINER" -- curl --fail localhost:8000
 
 # NEXT JOB #######################################################################   
   scan-image:

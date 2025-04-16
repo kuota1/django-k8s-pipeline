@@ -3,6 +3,7 @@ version: '3.9'
 services:
   web:
     image: ${TESTING_IMAGE}
+    command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
@@ -14,5 +15,5 @@ services:
       web:
         condition: service_started
     command: >
-      sh -c "for i in {1..20}; do echo '⌛ Intento '$i; curl -s http://web:8000 && echo '✅ API disponible' && exit 0 || sleep 3; done; echo '❌ Falló el acceso a la API'; exit 1"
+      sh -c "sleep 5 && curl -s http://web:8000 && echo '✅ API disponible' || (echo '❌ API no disponible'; exit 1)"
 
