@@ -1,0 +1,20 @@
+#!/bin/bash
+set -eo pipefail
+
+user="${POSTGRES_USER:-postgres}"
+db="${POSTGRES_DB:-$user}"
+export PGPASSWORD="${POSTGRES_PASSWORD:-postgres}"
+
+for i in {1..20}; do
+  if psql -h 127.0.0.1 -U "$user" -d "$db" -c 'SELECT 1' >/dev/null 2>&1; then
+    echo "✅ Database is ready!"
+    exit 0
+  else
+    echo "⏳ Waiting for PostgreSQL... ($i)"
+    sleep 2
+  fi
+done
+
+echo "❌ PostgreSQL is not ready after 20 tries"
+
+exit 1

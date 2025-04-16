@@ -41,7 +41,7 @@ prueba_reconocimiento_facial.py
 django-secrets.yaml
 
 # Docker
-**/healthchecks/
+
 *.bak
 
 
