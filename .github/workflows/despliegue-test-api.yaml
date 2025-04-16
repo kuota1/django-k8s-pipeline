@@ -90,7 +90,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      - name: Test healthcheck in Docker Compose
+      - name: Integration smoke test
         run: |
           export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
           echo Testing image: "$TESTING_IMAGE"

@@ -31,9 +31,6 @@ Thumbs.db
 *.so
 *.dylib
 
-# Archivos de base de datos o pruebas
-*.sqlite3
-
 # Archivos de pruebas
 prueba_reconocimiento_facial.py
 
@@ -43,5 +40,6 @@ django-secrets.yaml
 # Docker
 
 *.bak
+
 
 
