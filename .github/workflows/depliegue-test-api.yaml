@@ -71,13 +71,7 @@ jobs:
 
     permissions:
       packages: read
-    env:
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_HOST: postgres
-      ALLOWED_HOSTS: "*"
+
 
     steps:
       - name: Checkout git repo
