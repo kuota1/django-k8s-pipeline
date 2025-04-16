@@ -96,7 +96,7 @@ jobs:
           docker compose -f docker-compose.test.yml up --exit-code-from sut
 
 
-# NEXT JOB  #######################################################################   
+# NEXT JOB #######################################################################   
   scan-image:
     name: Scan Image with Trivy
     needs: [build-test-image]
@@ -137,7 +137,7 @@ jobs:
 # NEXT JOB #######################################################################   
   build-final-image:
     name: Build Final Image
-    needs: [test-unit, test-integration, test-k3d, scan-image]
+    needs: [test-unit, test-integration, scan-image]
     runs-on: ubuntu-latest
 
     permissions:
