@@ -7,22 +7,24 @@ services:
       - "8000:8000"
 
   postgres:
-    image: postgres
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: postgres
     volumes:
-      - ./healthchecks:/healthchecks
+      - type: bind
+        source: ./healthchecks
+        target: /healthchecks
+        read_only: true
     healthcheck:
       test: /healthchecks/postgres-healthcheck
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 10s
 
   sut:
-    
     tty: true
     stdin_open: true
     image: "${TESTING_IMAGE}"
