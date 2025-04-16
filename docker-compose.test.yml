@@ -1,20 +1,17 @@
+version: '3.9'
+
 services:
   web:
-    image: agenda-django
+    image: ${TESTING_IMAGE}
     ports:
       - "8000:8000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    environment:
-      DEBUG: "1"
+    volumes:
+      - .:/app
 
   sut:
-    image: agenda-django
+    image: ${TESTING_IMAGE}
     depends_on:
       web:
-        condition: service_healthy
+        condition: service_started
     command: >
       sh -c "for i in {1..10}; do curl -s http://web:8000 && exit 0 || sleep 3; done; exit 1"
