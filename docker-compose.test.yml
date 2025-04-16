@@ -12,11 +12,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: postgres
-    volumes:
-      - type: bind
-        source: ./healthchecks
-        target: /healthchecks
-        read_only: true
+    #volumes:
+      #- type: bind
+       # source: ./healthchecks
+       # target: /healthchecks
+       # read_only: true
     #healthcheck:
       #test: /healthchecks/postgres-healthcheck
       #interval: 10s
@@ -31,7 +31,7 @@ services:
     depends_on:
       allhands22:
         condition: service_started
-      postgres:
-        condition: service_healthy
+      #postgres:
+       #condition: service_healthy
     command: >
       sh -c "for i in {1..10}; do curl -s http://allhands22:8000 && exit 0 || sleep 3; done; exit 1"
