@@ -1,4 +1,4 @@
-# Etapa base con dependencias
+ # Etapa base con dependencias
 FROM python:3.10-slim AS base
 
 WORKDIR /app
