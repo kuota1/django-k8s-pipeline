@@ -17,12 +17,12 @@ services:
         source: ./healthchecks
         target: /healthchecks
         read_only: true
-    healthcheck:
-      test: /healthchecks/postgres-healthcheck
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 55s
+    #healthcheck:
+      #test: /healthchecks/postgres-healthcheck
+      #interval: 10s
+      #timeout: 5s
+      #retries: 5
+      #start_period: 55s
 
   sut:
     tty: true
