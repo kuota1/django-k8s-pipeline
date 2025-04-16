@@ -148,11 +148,14 @@ jobs:
           POD_NAME=$(kubectl get pod -l app=apytest -o jsonpath="{.items[0].metadata.name}")
           echo "Pod listo: $POD_NAME"
 
-          echo "Listando contenedores..."
+          echo "Contenedores disponibles:"
           kubectl get pod "$POD_NAME" -o jsonpath='{.spec.containers[*].name}'; echo
 
-          echo "Ejecutando curl dentro del pod..."
-          kubectl exec "$POD_NAME" -c apytest -- curl --fail localhost:8000
+          echo "Logs del pod (últimos 20):"
+          kubectl logs "$POD_NAME" --tail=20
+
+          echo "Ejecutando smoke test dentro del pod..."
+          kubectl exec "$POD_NAME" -- curl --fail localhost:8000
 
 
 # NEXT JOB #######################################################################   
