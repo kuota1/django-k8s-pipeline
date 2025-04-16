@@ -18,10 +18,7 @@ spec:
         - name: regcred
       containers:
         - name: apytest
-          image: "ghcr.io/kuota1/apytest:${TESTING_IMAGE}"
+          image: ghcr.io/kuota1/apytest:${GITHUB_RUN_ID}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
-          tty: true
-          stdin: true
-

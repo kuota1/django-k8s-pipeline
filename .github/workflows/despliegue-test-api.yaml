@@ -149,13 +149,14 @@ jobs:
       - name: Smoke test in deployed pod
         run: |
           POD=$(kubectl get pods -l app=apytest -o jsonpath="{.items[0].metadata.name}")
-          CONTAINER=$(kubectl get pod $POD -o jsonpath="{.spec.containers[0].name}")
+          CONTAINER="apytest"  # nombre fijo como en el deployment.yaml
+          
           echo "Pod listo: $POD"
           echo "Contenedores disponibles:"
-          kubectl get pod $POD -o jsonpath="{.spec.containers[*].name}" && echo
+          kubectl get pod "$POD" -o jsonpath="{.spec.containers[*].name}" && echo
           
           echo "Logs del pod (últimos 20):"
-          kubectl logs $POD --tail=20
+          kubectl logs "$POD" --tail=20
           
           echo "Ejecutando smoke test dentro del pod..."
           kubectl exec "$POD" -c "$CONTAINER" -- curl --fail localhost:8000
