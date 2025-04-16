@@ -129,20 +129,30 @@ jobs:
             --no-lb
             --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
 
-      
       - name: Smoke test deployment in k3d Kubernetes
         run: |
           kubectl create secret docker-registry regcred \
             --docker-server=https://ghcr.io \
             --docker-username=${{ github.actor }} \
             --docker-password=${{ secrets.GHCR_PAT }}
+
           export TESTING_IMAGE=ghcr.io/kuota1/apytest:${{ github.run_id }}
           envsubst < manifests/deployment.yaml | kubectl apply -f -
+
+          echo "Esperando que el deployment esté listo..."
           kubectl rollout status deployment apytest
-          
+
+          echo "Esperando unos segundos extra para asegurar que el contenedor esté listo..."
+          sleep 5
+
           POD_NAME=$(kubectl get pod -l app=apytest -o jsonpath="{.items[0].metadata.name}")
-          echo "Running smoke test in pod: $POD_NAME"
-          kubectl exec "$POD_NAME" -- curl --fail localhost
+          echo "Pod listo: $POD_NAME"
+
+          echo "Listando contenedores..."
+          kubectl get pod "$POD_NAME" -o jsonpath='{.spec.containers[*].name}'; echo
+
+          echo "Ejecutando curl dentro del pod..."
+          kubectl exec "$POD_NAME" -c apytest -- curl --fail localhost:8000
 
 
 # NEXT JOB #######################################################################   
