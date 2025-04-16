@@ -18,7 +18,10 @@ spec:
         - name: regcred
       containers:
         - name: apytest
-          image: "${TESTING_IMAGE}"
+          image: "ghcr.io/kuota1/apytest:${TESTING_IMAGE}"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+          tty: true
+          stdin: true
+
